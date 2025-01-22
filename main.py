@@ -1,9 +1,22 @@
 import argparse
+import logging
 import os
 import sys
+from logging import getLogger
 from pathlib import Path
 
-from evaluate.capital import TaxableCrypto
+from dotenv import load_dotenv
+from pyloggingsetup import get_logger
+
+from cryptogainscalc.evaluate.capital import TaxableCrypto
+
+root_dir = Path(__file__).parent
+
+load_dotenv(root_dir / ".env")
+
+getLogger("googleapiclient.discovery_cache").setLevel(level=logging.WARNING)
+
+logger = get_logger(__file__, log_dir=root_dir / "logs")
 
 
 def main(argv):
@@ -16,7 +29,7 @@ def main(argv):
         "--tax_year",
         "-y",
         type=int,
-        help="(Optional) Tax year for which to calculate capital gains/losses."
+        help="(Optional) Tax year for which to calculate capital gains/losses.",
     )
 
     # optional argument
@@ -24,7 +37,7 @@ def main(argv):
         "--fiat_currency",
         "-f",
         type=str,
-        help="(Optional) Selected fiat currency. Default = \"usd\"."
+        help='(Optional) Selected fiat currency. Default = "usd".',
     )
 
     # optional argument
@@ -32,7 +45,7 @@ def main(argv):
         "--sort_field",
         "-s",
         type=str,
-        help="(Optional) Selected field on which to sort transactions. Default = \"timestamp\"."
+        help='(Optional) Selected field on which to sort transactions. Default = "timestamp".',
     )
 
     # switch
@@ -40,7 +53,7 @@ def main(argv):
         "--lifo",
         "-l",
         action="store_true",
-        help="(Optional) Boolean switch to turn on LIFO (descending). Default = FIFO (ascending)."
+        help="(Optional) Boolean switch to turn on LIFO (descending). Default = FIFO (ascending).",
     )
 
     # optional argument
@@ -49,8 +62,10 @@ def main(argv):
         "-e",
         nargs="+",
         default=[],
-        help=("(Optional) List of expenditure types from data source (spreadsheet). "
-              "Default = [\"purchase\", \"donation\", \"gift\"].")
+        help=(
+            "(Optional) List of expenditure types from data source (spreadsheet). "
+            'Default = ["purchase", "donation", "gift"].'
+        ),
     )
 
     # switch
@@ -58,7 +73,7 @@ def main(argv):
         "--export",
         "-x",
         action="store_true",
-        help="(Optional) Boolean switch to turn on export to CSV."
+        help="(Optional) Boolean switch to turn on export to CSV.",
     )
 
     args = arg_parser.parse_args(argv)
@@ -68,7 +83,7 @@ def main(argv):
         fiat_currency=args.fiat_currency if args.fiat_currency else "usd",
         sort_field=args.sort_field if args.sort_field else "timestamp",
         sort_direction="ascending" if args.lifo else "descending",
-        expenditure_types=args.expenditure_types if args.expenditure_types else []
+        expenditure_types=args.expenditure_types if args.expenditure_types else [],
     )
 
     capital_gains_and_losses_df = taxable_crypto.get_capital_gains_and_losses_df(
@@ -85,7 +100,8 @@ def main(argv):
             os.makedirs(output_dir)
 
         capital_gains_and_losses_df.to_csv(
-            output_dir / (
+            output_dir
+            / (
                 f"{f'{args.tax_year}-' if args.tax_year else ''}"
                 f"cryptocurrency{f'_to_{args.fiat_currency}' if args.fiat_currency else ''}-"
                 f"capital_gains_and_losses.csv"
@@ -93,7 +109,8 @@ def main(argv):
         )
 
         taxable_income_df.to_csv(
-            output_dir / (
+            output_dir
+            / (
                 f"{f'{args.tax_year}-' if args.tax_year else ''}"
                 f"cryptocurrency{f'_to_{args.fiat_currency}' if args.fiat_currency else ''}-"
                 f"taxable_income.csv"
@@ -105,7 +122,7 @@ def main(argv):
 
 if __name__ == "__main__":
     capital_gains_and_losses_output, taxable_income_output = main(sys.argv[1:])
-    print(capital_gains_and_losses_output.to_string())
-    print("-" * 100)
-    print(taxable_income_output.to_string())
-    print()
+    logger.info(
+        f"\n\nCAPITAL GAINS AND LOSSES\n{capital_gains_and_losses_output.to_string()}\n"
+    )
+    logger.info(f"\n\nTAXABLE INCOME\n{taxable_income_output.to_string()}\n")

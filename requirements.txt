@@ -1,0 +1,8 @@
+git+https://github.com/wrencode/pyloggingsetup.git@main
+google-api-python-client==2.116.0
+google-auth-oauthlib==1.2.0
+pandas==2.2.0
+python-dotenv==1.0.1
+protobuf==5.29.3
+pyobjson==6.2.0
+python-dateutil==2.9.0.post0
